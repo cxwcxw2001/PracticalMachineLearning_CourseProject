@@ -1,0 +1,74 @@
+---
+title: "Human Activity Recognition"
+author: "Xiaowei Scott Chen"
+date: "Friday, August 22, 2014"
+output: html_document
+---
+```{r,echo=F}
+#This function exports predicted outcome to txt files in the working directory
+#This function is provided by Jeff Leek
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+```
+
+```{r,echo=FALSE}
+#load training and testing data
+setwd("E:/Coursera//Practical Machine Learning/CourseProject")
+training=read.csv(file="training.csv",header=T)
+testing=read.csv(file="testing.csv",header=T)
+```
+This data set contains 160 features, which is a very large nummber.I get rid of all variables that is NA in the test set. (Since NA value cannot be used to predict outcome)
+```{r}
+selectedCol=NULL
+#Only select numeric variables which do not contain NA values
+for (i in 1:ncol(training)){
+  if (is.numeric(training[,i]) & !any(is.na(training[,i]))){
+    selectedCol=c(selectedCol,names(training)[i])
+  }
+}
+#simplified training set
+simTrain=training[,as.vector(selectedCol)] 
+#Remove index,timestamp and num_window vairable
+simTrain[,1:4]=list(NULL)
+#simplified testing set
+simTest=testing[,as.vector(selectedCol)]    
+#Remove index,timestamp and num_window vairable
+simTest[,1:4]=list(NULL)
+```
+Next I applied PCA(principalcomponent analysis)to reduce the dimension of features further. 
+```{r,echo=FALSE}
+library(caret)
+```
+```{r}
+preProc=preProcess(simTrain,method="pca",thresh=0.9)
+trainPC=predict(preProc,simTrain)
+testPC=predict(preProc,simTest)
+```
+This preprocessing selected `r preProc$numComp` features. In pursuit of accuracy, I select random forest model at the cost of speed.
+```{r,echo=FALSE}
+library(randomForest)
+```
+```{r}
+model=train(training$classe~.,method="rf",data=trainPC)
+```
+As a necessary step of cross validation, I checked the in-sample error rate:
+```{r}
+pred=predict(model,trainPC)
+table(pred,training[,160])
+error=sum(pred!=training[,160])/length(pred) 
+```
+The in-sample error rate is surprisingly 0!! Even though the accuracy on the training set is an optimistic estimate of goodness-of-fit, it is reasonable to say that random forest model performs pretty well for this question. 
+Then I make predication based on the fitted model and 20 test cases
+```{r}
+answer=predict(model,testPC)
+#Export the predicted outcome to txt files
+pml_write_files(answer)
+```
+
+
+
