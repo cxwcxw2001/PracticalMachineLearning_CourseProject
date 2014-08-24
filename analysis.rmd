@@ -41,7 +41,7 @@ simTest=testing[,as.vector(selectedCol)]
 simTest[,1:4]=list(NULL)
 ```
 Next I applied PCA(principalcomponent analysis)to reduce the dimension of features further. 
-```{r,echo=FALSE}
+```{r}
 library(caret)
 ```
 ```{r}
@@ -50,7 +50,7 @@ trainPC=predict(preProc,simTrain)
 testPC=predict(preProc,simTest)
 ```
 This preprocessing selected `r preProc$numComp` features. In pursuit of accuracy, I select random forest model at the cost of speed.
-```{r,echo=FALSE}
+```{r}
 library(randomForest)
 ```
 ```{r}
@@ -62,8 +62,9 @@ pred=predict(model,trainPC)
 table(pred,training[,160])
 error=sum(pred!=training[,160])/length(pred) 
 ```
-The in-sample error rate is surprisingly 0!! Even though the accuracy on the training set is an optimistic estimate of goodness-of-fit, it is reasonable to say that random forest model performs pretty well for this question. 
-Then I make predication based on the fitted model and 20 test cases
+The in-sample error rate is surprisingly 0!! Even though the accuracy on the training set is an optimistic estimate of goodness-of-fit, it is reasonable to say that random forest model performs pretty well for this question, and the out-of-sample error would be small.
+
+Then I make predication based on the fitted model and 20 test cases, which is the last step in the cross validation.
 ```{r}
 answer=predict(model,testPC)
 #Export the predicted outcome to txt files
